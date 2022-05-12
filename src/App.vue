@@ -21,9 +21,9 @@ export default {
 
     function fetchData () {
       fetchFcd('https://fcd.terra.dev/v1/TotalSupply/luna').then(body => luna.totalSupply = Number(body))
-      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/ust').then(body => luna.circulatingSupply = Number(body))
-      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/luna').then(body => luna.totalSupply = Number(body))
-      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/ust').then(body => luna.circulatingSupply = Number(body))
+      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/luna').then(body => luna.circulatingSupply = Number(body))
+      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/ust').then(body => ust.totalSupply = Number(body))
+      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/ust').then(body => ust.circulatingSupply = Number(body))
 
       updatedAt.value = new Date()
     }
