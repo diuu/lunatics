@@ -26,14 +26,22 @@ export default {
     })
 
     const updatedAt = ref(new Date())
+    const simple = ref(false)
 
+    function onClickSwitch() {
+      simple.value = !simple.value
+    }
+
+    function displayLargeNumber(number: number|string) {
+      return simple.value ? (Number(number) / 10**9).toFixed(2) + 'B' : Number(Number(number).toFixed(0)).toLocaleString()
+    }
     function fetchData () {
-      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/luna').then(body => luna.totalSupply = Number(body))
-      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/luna').then(body => luna.circulatingSupply = Number(body))
+      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/luna').then(body => luna.totalSupply = body)
+      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/luna').then(body => luna.circulatingSupply = body)
       fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=terra-luna&vs_currencies=usd').then((res) => luna.price = res[ 'terra-luna' ][ 'usd' ])
 
-      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/ust').then(body => ust.totalSupply = Number(body))
-      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/ust').then(body => ust.circulatingSupply = Number(body))
+      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/ust').then(body => ust.totalSupply = body)
+      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/ust').then(body => ust.circulatingSupply = body)
       fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=terrausd&vs_currencies=usd').then((res) => ust.price = res[ 'terrausd' ][ 'usd' ])
 
       updatedAt.value = new Date()
@@ -46,7 +54,10 @@ export default {
       luna,
       ust,
       updatedAt,
-      onClickRefresh: fetchData
+      simple,
+      displayLargeNumber,
+      onClickRefresh: fetchData,
+      onClickSwitch,
     }
   }
 }
@@ -66,34 +77,38 @@ export default {
       <h2>LUNA</h2>
 
       <h4>Total Supply</h4>
-      {{luna.totalSupply.toLocaleString()}}
+      {{displayLargeNumber(luna.totalSupply)}}
 
       <h4>Circulating Supply</h4>
-      {{luna.circulatingSupply.toLocaleString()}}
+      {{displayLargeNumber(luna.circulatingSupply)}}
 
       <h4>Price</h4>
-      {{ luna.price }}
+      ${{ luna.price }}
 
       <h4>Market Cap</h4>
-      {{ luna.marketCap.toLocaleString() }}
+      ${{ displayLargeNumber(luna.marketCap) }}
     </div>
 
     <div class="content_token _ust">
       <h2>UST</h2>
 
       <h4>Total Supply</h4>
-      {{ust.totalSupply.toLocaleString()}}
+      {{displayLargeNumber(ust.totalSupply)}}
 
       <h4>Circulating Supply</h4>
-      {{ust.circulatingSupply.toLocaleString()}}
+      {{displayLargeNumber(ust.circulatingSupply)}}
 
 
       <h4>Price</h4>
-      {{ ust.price }}
+      ${{ ust.price }}
 
       <h4>Market Cap</h4>
-      {{ ust.marketCap.toLocaleString() }}
+      ${{ displayLargeNumber(ust.marketCap) }}
     </div>
+  </div>
+
+  <div>
+    <button @click="onClickSwitch">{{ simple ? 'Complete' : 'Simple' }}</button>
   </div>
   <a class="fork-on-github" href="https://github.com/zgayjjf/lunatics"><img loading="lazy" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_white_ffffff.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1"></a>
 </template>
@@ -133,6 +148,11 @@ body {
     }
   }
 
+  h4 {
+    margin-top: 30px;
+    margin-bottom: 10px;
+  }
+
   .page-content {
     margin-top: 20px;
     display: flex;
@@ -143,10 +163,6 @@ body {
       flex: 1;
       flex-direction: column;
       text-align: center;
-
-      h4 {
-        margin-top: 50px;
-      }
     }
   }
 
