@@ -1,8 +1,12 @@
 <script lang="ts">
-import { onBeforeMount, reactive, ref } from 'vue'
+import { computed, onBeforeMount, reactive, ref } from 'vue'
 
 function fetchFcd (url: string) {
   return fetch(url).then(res => res.text())
+}
+
+function fetchJson(url: string) {
+  return fetch(url).then(res => res.json())
 }
 
 export default {
@@ -10,11 +14,15 @@ export default {
     const luna = reactive({
       totalSupply: 0,
       circulatingSupply: 0,
+      price: 0,
+      marketCap: computed(() => luna.price * luna.circulatingSupply),
     })
 
     const ust = reactive({
       totalSupply: 0,
       circulatingSupply: 0,
+      price: 0,
+      marketCap: computed(() => ust.price * ust.circulatingSupply),
     })
 
     const updatedAt = ref(new Date())
@@ -22,8 +30,11 @@ export default {
     function fetchData () {
       fetchFcd('https://fcd.terra.dev/v1/TotalSupply/luna').then(body => luna.totalSupply = Number(body))
       fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/luna').then(body => luna.circulatingSupply = Number(body))
+      fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=terra-luna&vs_currencies=usd').then((res) => luna.price = res[ 'terra-luna' ][ 'usd' ])
+
       fetchFcd('https://fcd.terra.dev/v1/TotalSupply/ust').then(body => ust.totalSupply = Number(body))
       fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/ust').then(body => ust.circulatingSupply = Number(body))
+      fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=terrausd&vs_currencies=usd').then((res) => ust.price = res[ 'terrausd' ][ 'usd' ])
 
       updatedAt.value = new Date()
     }
@@ -59,6 +70,12 @@ export default {
 
       <h4>Circulating Supply</h4>
       {{luna.circulatingSupply.toLocaleString()}}
+
+      <h4>Price</h4>
+      {{ luna.price }}
+
+      <h4>Market Cap</h4>
+      {{ luna.marketCap.toLocaleString() }}
     </div>
 
     <div class="content_token _ust">
@@ -69,6 +86,13 @@ export default {
 
       <h4>Circulating Supply</h4>
       {{ust.circulatingSupply.toLocaleString()}}
+
+
+      <h4>Price</h4>
+      {{ ust.price }}
+
+      <h4>Market Cap</h4>
+      {{ ust.marketCap.toLocaleString() }}
     </div>
   </div>
   <a class="fork-on-github" href="https://github.com/zgayjjf/lunatics"><img loading="lazy" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_white_ffffff.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1"></a>
