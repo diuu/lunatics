@@ -1,8 +1,9 @@
 <script lang="ts">
-import { computed, onBeforeMount, reactive, ref } from 'vue'
+import { useStorage } from '@vueuse/core'
+import { computed, onBeforeMount, Ref, unref } from 'vue'
 
 function fetchFcd (url: string) {
-  return fetch(url).then(res => res.text())
+  return fetch(url).then(res => res.text()).then(text => Number(text))
 }
 
 function fetchJson(url: string) {
@@ -11,52 +12,74 @@ function fetchJson(url: string) {
 
 export default {
   setup() {
-    const luna = reactive({
-      totalSupply: 0,
+    const luna = useStorage('luna', {
+      totalSupply: 29101617313.334843,
       circulatingSupply: 0,
       price: 0,
-      marketCap: computed(() => luna.price * luna.circulatingSupply),
-
+      updatedAt: 1652366249245,
       lastTime: {
-        time: 1652366249245,
         totalSupply: 29101617313.334843,
+        updatedAt: 1652366249245,
       },
-
-      issueRate: computed(() => luna.totalSupply === 0 ? 0 : (luna.totalSupply - luna.lastTime.totalSupply) / ((Date.now() - luna.lastTime.time) / 1000) * 3600)
     })
 
-    const ust = reactive({
-      totalSupply: 0,
+    const lunaRef = {
+      marketCap: computed(() => luna.value.price * luna.value.circulatingSupply),
+      issueRate: computed(() => {
+        return luna.value.totalSupply === 0 ? 0 : (luna.value.totalSupply - luna.value.lastTime.totalSupply) / ((Date.now() - luna.value.lastTime.updatedAt) / 1000) * 3600
+      })
+    }
+
+    const ust = useStorage('ust', {
+      totalSupply: 11852549719.719362,
       circulatingSupply: 0,
       price: 0,
-      marketCap: computed(() => ust.price * ust.circulatingSupply),
+      updatedAt: 1652366249245,
       lastTime: {
-        time: 1652366249245,
         totalSupply: 11852549719.719362,
+        updatedAt: 1652366249245,
       },
-      issueRate: computed(() => ust.totalSupply === 0 ? 0 : (ust.totalSupply - ust.lastTime.totalSupply) / ((Date.now() - ust.lastTime.time) / 1000) * 3600)
     })
 
-    const updatedAt = ref(new Date())
-    const simple = ref(false)
+    const ustRef = {
+      marketCap: computed(() => ust.value.price * ust.value.circulatingSupply),
+      issueRate: computed(() => {
+        return ust.value.totalSupply === 0 ? 0 : (ust.value.lastTime.totalSupply - ust.value.totalSupply) / ((Date.now() - ust.value.lastTime.updatedAt) / 1000) * 3600
+      })
+    }
+
+    const simple = useStorage('simple', false)
 
     function onClickSwitch() {
       simple.value = !simple.value
     }
 
-    function displayLargeNumber(number: number|string) {
-      return simple.value ? (Number(number) / 10**9).toFixed(2) + 'B' : Number(Number(number).toFixed(0)).toLocaleString()
+    function displayLargeNumber(number: number|string|Ref<number>) {
+      const value = unref(number)
+      return simple.value ? (Number(value) / 10**9).toFixed(2) + 'B' : Number(Number(value).toFixed(0)).toLocaleString()
     }
     function fetchData () {
-      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/luna').then(body => luna.totalSupply = body)
-      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/luna').then(body => luna.circulatingSupply = body)
-      fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=terra-luna&vs_currencies=usd').then((res) => luna.price = res[ 'terra-luna' ][ 'usd' ])
+      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/luna').then(body => {
+        if (luna.value.totalSupply !== body) {
+          luna.value.lastTime.totalSupply = luna.value.totalSupply
+          luna.value.lastTime.updatedAt = luna.value.updatedAt
+          luna.value.totalSupply = body
+        }
+        luna.value.updatedAt = Date.now()
+      })
+      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/luna').then(body => luna.value.circulatingSupply = body)
+      fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=terra-luna&vs_currencies=usd').then((res) => luna.value.price = res[ 'terra-luna' ][ 'usd' ])
 
-      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/ust').then(body => ust.totalSupply = body)
-      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/ust').then(body => ust.circulatingSupply = body)
-      fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=terrausd&vs_currencies=usd').then((res) => ust.price = res[ 'terrausd' ][ 'usd' ])
-
-      updatedAt.value = new Date()
+      fetchFcd('https://fcd.terra.dev/v1/TotalSupply/ust').then(body => {
+        if (ust.value.totalSupply !== body) {
+          ust.value.lastTime.totalSupply = ust.value.totalSupply
+          ust.value.lastTime.updatedAt = ust.value.updatedAt
+          ust.value.totalSupply = body
+        }
+        ust.value.updatedAt = Date.now()
+      })
+      fetchFcd('https://fcd.terra.dev/v1/circulatingsupply/ust').then(body => ust.value.circulatingSupply = body)
+      fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=terrausd&vs_currencies=usd').then((res) => ust.value.price = res[ 'terrausd' ][ 'usd' ])
     }
 
     onBeforeMount(fetchData)
@@ -64,8 +87,9 @@ export default {
 
     return {
       luna,
+      lunaRef,
       ust,
-      updatedAt,
+      ustRef,
       simple,
       displayLargeNumber,
       onClickRefresh: fetchData,
@@ -79,7 +103,7 @@ export default {
   <h1 style="margin: 0">Lunatics</h1>
   <p style="margin: 0">
     <small>
-      Updated At {{ updatedAt.toLocaleTimeString()}}
+      Updated At {{ new Date(luna.updatedAt).toLocaleTimeString()}}
       <button @click="onClickRefresh">Refresh</button>
     </small>
   </p>
@@ -95,13 +119,13 @@ export default {
       {{displayLargeNumber(luna.circulatingSupply)}}
 
       <h4>Issue Rate</h4>
-      {{displayLargeNumber(luna.issueRate)}} / Hour
+      {{displayLargeNumber(lunaRef.issueRate)}} / Hour
 
       <h4>Price</h4>
       ${{ luna.price }}
 
       <h4>Market Cap</h4>
-      ${{ displayLargeNumber(luna.marketCap) }}
+      ${{ displayLargeNumber(lunaRef.marketCap) }}
     </div>
 
     <div class="content_token _ust">
@@ -114,13 +138,14 @@ export default {
       {{displayLargeNumber(ust.circulatingSupply)}}
 
       <h4>Burn Rate</h4>
-      {{displayLargeNumber(-ust.issueRate)}} / Hour
+
+      {{displayLargeNumber(ustRef.issueRate)}} / Hour
 
       <h4>Price</h4>
       ${{ ust.price }}
 
       <h4>Market Cap</h4>
-      ${{ displayLargeNumber(ust.marketCap) }}
+      ${{ displayLargeNumber(ustRef.marketCap) }}
     </div>
   </div>
 
