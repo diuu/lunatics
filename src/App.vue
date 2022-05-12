@@ -16,6 +16,13 @@ export default {
       circulatingSupply: 0,
       price: 0,
       marketCap: computed(() => luna.price * luna.circulatingSupply),
+
+      lastTime: {
+        time: 1652366249245,
+        totalSupply: 29101617313.334843,
+      },
+
+      issueRate: computed(() => luna.totalSupply === 0 ? 0 : (luna.totalSupply - luna.lastTime.totalSupply) / ((Date.now() - luna.lastTime.time) / 1000) * 3600)
     })
 
     const ust = reactive({
@@ -23,6 +30,11 @@ export default {
       circulatingSupply: 0,
       price: 0,
       marketCap: computed(() => ust.price * ust.circulatingSupply),
+      lastTime: {
+        time: 1652366249245,
+        totalSupply: 11852549719.719362,
+      },
+      issueRate: computed(() => ust.totalSupply === 0 ? 0 : (ust.totalSupply - ust.lastTime.totalSupply) / ((Date.now() - ust.lastTime.time) / 1000) * 3600)
     })
 
     const updatedAt = ref(new Date())
@@ -82,6 +94,9 @@ export default {
       <h4>Circulating Supply</h4>
       {{displayLargeNumber(luna.circulatingSupply)}}
 
+      <h4>Issue Rate</h4>
+      {{displayLargeNumber(luna.issueRate)}} / Hour
+
       <h4>Price</h4>
       ${{ luna.price }}
 
@@ -98,6 +113,8 @@ export default {
       <h4>Circulating Supply</h4>
       {{displayLargeNumber(ust.circulatingSupply)}}
 
+      <h4>Burn Rate</h4>
+      {{displayLargeNumber(-ust.issueRate)}} / Hour
 
       <h4>Price</h4>
       ${{ ust.price }}
@@ -108,7 +125,7 @@ export default {
   </div>
 
   <div>
-    <button @click="onClickSwitch">{{ simple ? 'Complete' : 'Simple' }}</button>
+    <button @click="onClickSwitch">{{ simple ? 'Complete View' : 'Simple View' }}</button>
   </div>
   <a class="fork-on-github" href="https://github.com/zgayjjf/lunatics"><img loading="lazy" width="149" height="149" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_white_ffffff.png?resize=149%2C149" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1"></a>
 </template>
